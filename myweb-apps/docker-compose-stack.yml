@@ -1,0 +1,67 @@
+version: "3.1"
+
+services:
+  proxy:
+    image: ferryh77/belajar-docker:proxy-1.0
+    depends_on: 
+      - web
+      - pma
+    ports:
+      - '80:80'
+    deploy:
+      replicas: 3 
+      restart_policy:
+        condition: on-failure
+    networks:
+      - proxy_net
+      - ext_net
+
+  web:
+    image: ferryh77/belajar-docker:web-1.0
+    depends_on:   
+      - db
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+    - proxy_net
+    - int_net
+
+  db: 
+    image: mysql:5.7 
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: dbkuasai
+      MYSQL_USER: cilsykuasaiuser
+      MYSQL_PASSWORD: cilsykuasaipassword
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - int_net
+
+  pma:
+    image: phpmyadmin/phpmyadmin:4.8.3
+    depends_on: 
+      - db
+    healthcheck:
+      test: curl -f http://localhost/ || exit 1
+      timeout: 3s
+      interval: 30s
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - proxy_net
+      - int_net
+
+networks:
+  int_net:
+    driver: overlay
+  proxy_net:
+    driver: overlay
+  ext_net:
+    driver: overlay
+
+volumes: 
+  mysql-data:
+
